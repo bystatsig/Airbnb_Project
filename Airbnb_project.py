@@ -59,4 +59,6 @@ print(dfl.groupby(['neighbourhood']).describe()['pct_booked_30'].to_string())
 
 
 #todo Create Linear Model to predict occupancy rate (next 30 days)
+#todo Find github ReadMe to plagurize
+
 
