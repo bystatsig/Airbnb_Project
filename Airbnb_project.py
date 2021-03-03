@@ -1,6 +1,4 @@
 """
-Questions:
-Create a regression model to predict the number of reviews, or availability in the next year. Assume lack of availability is a successful
 
 """
 
@@ -43,3 +41,22 @@ plt.figure(figsize=(13, 9))
 sns.heatmap(dfl_cont_int.corr(), annot=True, fmt='.1f', vmin=-1, vmax=+1, center=0, annot_kws={"size": 8},
             mask=mask).figure.tight_layout()
 plt.show()
+
+print(dfl[['review_scores_value','review_scores_rating']].to_string())
+dfl['review_scores_value'].describe()
+dfl.describe()[['review_scores_rating','availability_365','availability_30']]
+
+# Create 2 dummy Response Variables of Interest for percentage of the time the listing is booked (30 and 365 days out)
+dfl['pct_booked_365'] = 1 - dfl['availability_365']/365
+dfl['pct_booked_30'] = 1 - dfl['availability_30']/30
+
+dfl['pct_booked_365'].hist(bins=30)
+dfl['pct_booked_30'].hist(bins=30)
+
+dfl.describe()['pct_booked_365']    # Average occupancy rate of 33%
+dfl.describe()['pct_booked_30']     # Average occupancy rate of 44%
+print(dfl.groupby(['neighbourhood']).describe()['pct_booked_30'].to_string())
+
+
+#todo Create Linear Model to predict occupancy rate (next 30 days)
+
