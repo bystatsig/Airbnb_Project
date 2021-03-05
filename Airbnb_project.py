@@ -18,11 +18,7 @@ dfl.shape
 dfl.describe()
 print(dfl.dtypes.to_string())
 dfl.describe()['reviews_per_month']
-
-dfr.shape
-dfr['date'].unique()
-dfc['listing_id'] == '241032'.value_counts()
-print(dfc['listing_id'].value_counts().to_string())
+dfl
 
 # Convert currency variables to float
 dfl['price'] = dfl['price'].str.replace('$', '').str.replace(',', '').astype('float64')
@@ -38,8 +34,7 @@ dfl_cont_int = dfl_cont.drop(columns=['id', 'scrape_id', 'host_id', 'square_feet
 # Create correlation matrix to see if there are any insightful correlations between variables.
 mask = np.triu(np.ones_like(dfl_cont_int.corr(), dtype=bool))  # only show half of corr plot
 plt.figure(figsize=(13, 9))
-sns.heatmap(dfl_cont_int.corr(), annot=True, fmt='.1f', vmin=-1, vmax=+1, center=0, annot_kws={"size": 8},
-            mask=mask).figure.tight_layout()
+sns.heatmap(dfl_cont_int.corr(), annot=True, fmt='.1f', vmin=-1, vmax=+1, center=0, annot_kws={"size": 8}, mask=mask).figure.tight_layout()
 plt.show()
 
 # Experimentation------------------------------------------
@@ -47,13 +42,13 @@ print(dfl[['review_scores_value','review_scores_rating']].to_string())
 dfl['review_scores_value'].describe()
 dfl.describe()[['review_scores_rating','availability_365','availability_30']]
 
-# Create 2 dummy Response Variables of Interest for percentage of the time the listing is booked (30 and 365 days out)
-dfl_cont_int['pct_booked_365'] = 1 - dfl['availability_365']/365
+# Create a dummy Response Variable of Interest for percentage of the time the listing is booked (30 and 365 days out)
 dfl_cont_int['pct_booked_30'] = 1 - dfl['availability_30']/30
-
-dfl_cont_int['pct_booked_365'].hist(bins=30)
-sns.histplot()
-dfl_cont_int['pct_booked_30'].hist(bins=30)
+# Plot
+plt.suptitle('Distribution of Listings Occupancy Rates', fontsize=16)
+histo = sns.histplot(dfl_cont_int['pct_booked_30'], bins=30)
+histo.set(ylabel='Count of Listings', xlabel='Occupancy Rate in Next 30 Days')
+plt.show()
 
 dfl_cont_int.describe()['pct_booked_365']    # Average occupancy rate of 33%
 dfl_cont_int.describe()['pct_booked_30']     # Average occupancy rate of 44%
