@@ -32,7 +32,7 @@ dfl['security_deposit'] = dfl['security_deposit'].str.replace('$', '').str.repla
 dfl['cleaning_fee'] = dfl['cleaning_fee'].str.replace('$', '').str.replace(',', '').astype('float64')
 
 # Reduce the continuous variable to those of interest (ie. remove id as they don't provide useful information)
-dfl_cont = dfl.select_dtypes(include=['float64', 'int64'])  # Get dataframe of only Category Columns
+dfl_cont = dfl.select_dtypes(include=['float64', 'int64'])  # Get dataframe of only Continuous Columns
 dfl_cont_int = dfl_cont.drop(columns=['id', 'scrape_id', 'host_id', 'square_feet', 'license'])  # Drop square_feet due to lack of data
 
 # Create correlation matrix to see if there are any insightful correlations between variables.
@@ -42,20 +42,29 @@ sns.heatmap(dfl_cont_int.corr(), annot=True, fmt='.1f', vmin=-1, vmax=+1, center
             mask=mask).figure.tight_layout()
 plt.show()
 
+# Experimentation------------------------------------------
 print(dfl[['review_scores_value','review_scores_rating']].to_string())
 dfl['review_scores_value'].describe()
 dfl.describe()[['review_scores_rating','availability_365','availability_30']]
 
 # Create 2 dummy Response Variables of Interest for percentage of the time the listing is booked (30 and 365 days out)
-dfl['pct_booked_365'] = 1 - dfl['availability_365']/365
-dfl['pct_booked_30'] = 1 - dfl['availability_30']/30
+dfl_cont_int['pct_booked_365'] = 1 - dfl['availability_365']/365
+dfl_cont_int['pct_booked_30'] = 1 - dfl['availability_30']/30
 
-dfl['pct_booked_365'].hist(bins=30)
-dfl['pct_booked_30'].hist(bins=30)
+dfl_cont_int['pct_booked_365'].hist(bins=30)
+sns.histplot()
+dfl_cont_int['pct_booked_30'].hist(bins=30)
 
-dfl.describe()['pct_booked_365']    # Average occupancy rate of 33%
-dfl.describe()['pct_booked_30']     # Average occupancy rate of 44%
+dfl_cont_int.describe()['pct_booked_365']    # Average occupancy rate of 33%
+dfl_cont_int.describe()['pct_booked_30']     # Average occupancy rate of 44%
 print(dfl.groupby(['neighbourhood']).describe()['pct_booked_30'].to_string())
+
+# Category Columns
+dfl_cat = dfl.select_dtypes(include= 'object')     # Get Category columns
+dfl_cat_int = dfl_cat[['host_response_time' ,'host_is_superhost','host_identity_verified']]
+dfl_cat.dtypes
+dfl_cat.isnull().mean()
+dfl_cat_int.value_counts('host_response_time')
 
 
 #todo Create Linear Model to predict occupancy rate (next 30 days)
