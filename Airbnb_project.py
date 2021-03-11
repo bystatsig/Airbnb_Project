@@ -6,6 +6,9 @@ import pandas as pd
 import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score, mean_squared_error
 
 pd.set_option('display.width', 800)
 pd.set_option('display.max_columns', 30)
@@ -29,18 +32,13 @@ dfl['cleaning_fee'] = dfl['cleaning_fee'].str.replace('$', '').str.replace(',', 
 
 # Reduce the continuous variable to those of interest (ie. remove id as they don't provide useful information)
 dfl_cont = dfl.select_dtypes(include=['float64', 'int64'])  # Get dataframe of only Continuous Columns
-dfl_cont_int = dfl_cont.drop(columns=['id', 'scrape_id', 'host_id', 'square_feet', 'license'])  # Drop square_feet due to lack of data
+dfl_cont_int = dfl_cont.drop(columns=['id', 'scrape_id', 'host_id', 'square_feet', 'license', 'monthly_price'])  # Drop square_feet and monthly_price due to lack of data
 
-# Create correlation matrix to see if there are any insightful correlations between variables.
+# Plot correlation matrix to see if there are any insightful correlations between variables.
 mask = np.triu(np.ones_like(dfl_cont_int.corr(), dtype=bool))  # only show half of corr plot
 plt.figure(figsize=(13, 9))
 sns.heatmap(dfl_cont_int.corr(), annot=True, fmt='.1f', vmin=-1, vmax=+1, center=0, annot_kws={"size": 8}, mask=mask).figure.tight_layout()
 plt.show()
-
-# Experimentation------------------------------------------
-print(dfl[['review_scores_value','review_scores_rating']].to_string())
-dfl['review_scores_value'].describe()
-dfl.describe()[['review_scores_rating','availability_365','availability_30']]
 
 # Create a dummy Response Variable of Interest for percentage of the time the listing is booked (30 and 365 days out)
 dfl_cont_int['pct_booked_30'] = 1 - dfl['availability_30']/30
@@ -50,11 +48,33 @@ histo = sns.histplot(dfl_cont_int['pct_booked_30'], bins=30)
 histo.set(ylabel='Count of Listings', xlabel='Occupancy Rate in Next 30 Days')
 plt.show()
 
-dfl_cont_int.describe()['pct_booked_365']    # Average occupancy rate of 33%
 dfl_cont_int.describe()['pct_booked_30']     # Average occupancy rate of 44%
 print(dfl.groupby(['neighbourhood']).describe()['pct_booked_30'].to_string())
 
-# Category Columns
+# Impute mean for null values
+fill_mean = lambda col: col.fillna(col.mean())  # Create mean function
+fill_dfl_cont_int = dfl_cont_int.apply(fill_mean, axis=0)  # Use function to Fill missing values with the mean of the column.
+
+# Split data in train/test
+y = fill_dfl_cont_int['pct_booked_30']
+x = fill_dfl_cont_int.drop('pct_booked_30', axis=1)
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=.3, random_state=15)    # random_state (keep value the same to recreate results)
+
+# 1 - INSTANTIATE THE MODEL
+lm_model = LinearRegression(normalize=True)
+# 2 - FIT THE MODEL TO THE TRAINING DATA SET
+lm_model.fit(x_train, y_train)
+# 3 - PREDICT TEST DATA FROM THE MODEL
+y_test_preds = lm_model.predict(x_test)
+# 4 - SCORE THE MODEL (BASED ON THE Y_TEST DATASET)
+r2_test = r2_score(y_test, y_test_preds)    # Rsquared metric on TEST data
+"The r-squared score (TEST fit) for your model was {} on {} values.".format(r2_test, len(y_test))
+
+y_TRAIN_preds = lm_model.predict(x_train)
+r2_TRAIN = r2_score(y_train, y_TRAIN_preds)
+"The r-squared score (TRAIN fit) for your model was {} on {} values.".format(r2_TRAIN, len(y_train))
+
+# TODO Category Columns
 dfl_cat = dfl.select_dtypes(include= 'object')     # Get Category columns
 dfl_cat_int = dfl_cat[['host_response_time' ,'host_is_superhost','host_identity_verified']]
 dfl_cat.dtypes
