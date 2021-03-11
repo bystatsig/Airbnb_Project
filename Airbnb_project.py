@@ -41,24 +41,27 @@ sns.heatmap(dfl_cont_int.corr(), annot=True, fmt='.1f', vmin=-1, vmax=+1, center
 plt.show()
 
 # Create a dummy Response Variable of Interest for percentage of the time the listing is booked (30 and 365 days out)
-dfl_cont_int['pct_booked_30'] = 1 - dfl['availability_30']/30
-# Plot
+dfl_cont_int['pct_booked_30'] = (1 - dfl['availability_30']/30)*100
+
+# Plot histogram of dummy Response Variable
 plt.suptitle('Distribution of Listings Occupancy Rates', fontsize=16)
 histo = sns.histplot(dfl_cont_int['pct_booked_30'], bins=30)
 histo.set(ylabel='Count of Listings', xlabel='Occupancy Rate in Next 30 Days')
 plt.show()
 
+######################
 dfl_cont_int.describe()['pct_booked_30']     # Average occupancy rate of 44%
 print(dfl.groupby(['neighbourhood']).describe()['pct_booked_30'].to_string())
 
-# Impute mean for null values
+# Impute means for null values
 fill_mean = lambda col: col.fillna(col.mean())  # Create mean function
 fill_dfl_cont_int = dfl_cont_int.apply(fill_mean, axis=0)  # Use function to Fill missing values with the mean of the column.
 
+####################
 dfl_cont_int.price.describe()
 fill_dfl_cont_int.price.describe()
 
-# Split data in train/test
+# Split data in train/test (occupancy rate)
 y = fill_dfl_cont_int['pct_booked_30']
 x = fill_dfl_cont_int.drop('pct_booked_30', axis=1)
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=.3, random_state=42)    # random_state (keep value the same to recreate results)
