@@ -55,10 +55,17 @@ print(dfl.groupby(['neighbourhood']).describe()['pct_booked_30'].to_string())
 fill_mean = lambda col: col.fillna(col.mean())  # Create mean function
 fill_dfl_cont_int = dfl_cont_int.apply(fill_mean, axis=0)  # Use function to Fill missing values with the mean of the column.
 
+dfl_cont_int.price.describe()
+fill_dfl_cont_int.price.describe()
+
 # Split data in train/test
 y = fill_dfl_cont_int['pct_booked_30']
 x = fill_dfl_cont_int.drop('pct_booked_30', axis=1)
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=.3, random_state=15)    # random_state (keep value the same to recreate results)
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=.3, random_state=42)    # random_state (keep value the same to recreate results)
+# Split data in train/test (PRICE)
+y = fill_dfl_cont_int['price']
+x = fill_dfl_cont_int.drop('price', axis=1)
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=.3, random_state=42)    # random_state (keep value the same to recreate results)
 
 # 1 - INSTANTIATE THE MODEL
 lm_model = LinearRegression(normalize=True)
@@ -69,10 +76,23 @@ y_test_preds = lm_model.predict(x_test)
 # 4 - SCORE THE MODEL (BASED ON THE Y_TEST DATASET)
 r2_test = r2_score(y_test, y_test_preds)    # Rsquared metric on TEST data
 "The r-squared score (TEST fit) for your model was {} on {} values.".format(r2_test, len(y_test))
-
+# How good is fit to the Train data?
 y_TRAIN_preds = lm_model.predict(x_train)
 r2_TRAIN = r2_score(y_train, y_TRAIN_preds)
 "The r-squared score (TRAIN fit) for your model was {} on {} values.".format(r2_TRAIN, len(y_train))
+
+# Plot predictions to actual test predictions
+scatter = sns.scatterplot(y_test,y_test_preds)
+scatter.set(ylabel= 'Predicted Values')
+
+# Evaluate coefficients
+coefs_df = pd.DataFrame()
+coefs_df['est_int'] = x_train.columns
+coefs_df['coefs'] = lm_model.coef_
+coefs_df['abs_coefs'] = np.abs(lm_model.coef_)
+coefs_df = coefs_df.sort_values('abs_coefs', ascending=False)
+coefs_df.head(20)
+
 
 # TODO Category Columns
 dfl_cat = dfl.select_dtypes(include= 'object')     # Get Category columns
