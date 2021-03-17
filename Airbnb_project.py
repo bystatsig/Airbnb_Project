@@ -7,84 +7,97 @@ import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, mean_squared_error
-
 pd.set_option('display.width', 800)
 pd.set_option('display.max_columns', 30)
 
 dfl = pd.read_csv('./data_files/listings.csv')
-dfc = pd.read_csv('./data_files/calendar.csv')  # each ID has 365 days
-dfr = pd.read_csv('./data_files/reviews.csv')
 
-dfl.shape
-dfl.describe()
-print(dfl.dtypes.to_string())
-dfl.describe()['reviews_per_month']
-dfl
-
-# Convert currency variables to float
+# Convert currency & rate variables to float
 dfl['price'] = dfl['price'].str.replace('$', '').str.replace(',', '').astype('float64')
 dfl['weekly_price'] = dfl['weekly_price'].str.replace('$', '').str.replace(',', '').astype('float64')
 dfl['monthly_price'] = dfl['monthly_price'].str.replace('$', '').str.replace(',', '').astype('float64')
 dfl['security_deposit'] = dfl['security_deposit'].str.replace('$', '').str.replace(',', '').astype('float64')
 dfl['cleaning_fee'] = dfl['cleaning_fee'].str.replace('$', '').str.replace(',', '').astype('float64')
+dfl['host_response_rate'] = dfl['host_response_rate'].str.replace('%', '').astype('float64')
+#print(dfl.dtypes.to_string())
 
-# Reduce the continuous variable to those of interest (ie. remove id as they don't provide useful information)
+# Get continuous variables. Reduce to those of interest (for example: remove id as they don't provide useful information)
 dfl_cont = dfl.select_dtypes(include=['float64', 'int64'])  # Get dataframe of only Continuous Columns
 dfl_cont_int = dfl_cont.drop(columns=['id', 'scrape_id', 'host_id', 'square_feet', 'license', 'monthly_price'])  # Drop square_feet and monthly_price due to lack of data
 
-# Plot correlation matrix to see if there are any insightful correlations between variables.
+# Impute means for continuous variables with null values
+fill_mean = lambda col: col.fillna(col.mean())  # Create mean function
+dfl_cont_int = dfl_cont_int.apply(fill_mean, axis=0)  # Use function to Fill missing values with the mean of the column.
+
+###################### Plot corr matrix to see if there are any insightful correlations between continuous variables.
 mask = np.triu(np.ones_like(dfl_cont_int.corr(), dtype=bool))  # only show half of corr plot
 plt.figure(figsize=(13, 9))
 sns.heatmap(dfl_cont_int.corr(), annot=True, fmt='.1f', vmin=-1, vmax=+1, center=0, annot_kws={"size": 8}, mask=mask).figure.tight_layout()
 plt.show()
 
-# Create a dummy Response Variable of Interest for percentage of the time the listing is booked (30 and 365 days out)
-dfl_cont_int['pct_booked_30'] = (1 - dfl['availability_30']/30)*100
+# Get categorical variables of interest
+dfl_categories = dfl.select_dtypes(include=['object'])
+# dfl_categories.nunique()    # Reduced variables to those with unique values less than x
+# dfl_categories['host_response_time'].value_counts()
+dfl_categories_int = dfl_categories[['property_type', 'cancellation_policy', 'neighbourhood_group_cleansed', 'host_response_time']]
 
-# Plot histogram of dummy Response Variable
+# Convert categorical variables of interest to dummy variables (1's and 0's)
+cols = dfl_categories_int.columns
+dummy = pd.get_dummies(dfl_categories_int[cols], prefix=cols, prefix_sep='_', drop_first=True, dummy_na=True)
+# dummy.sum()
+
+# Combine continuous and categorical variables
+dfl_combined = pd.merge(dfl_cont_int, dummy, left_index=True, right_index=True)
+
+
+# Create a Response Variable or percentage of the time the listing is booked. Remove vars which are highly correlated to response.
+dfl_combined['pct_booked_30'] = (1 - dfl['availability_30']/30)     # Add response variable (continuous)
+
+###################### Plot histogram of dummy Response Variable
 plt.suptitle('Distribution of Listings Occupancy Rates', fontsize=16)
-histo = sns.histplot(dfl_cont_int['pct_booked_30'], bins=30)
+histo = sns.histplot(dfl_combined['pct_booked_30'], bins=30)
 histo.set(ylabel='Count of Listings', xlabel='Occupancy Rate in Next 30 Days')
 plt.show()
-
 ######################
-dfl_cont_int.describe()['pct_booked_30']     # Average occupancy rate of 44%
-print(dfl.groupby(['neighbourhood']).describe()['pct_booked_30'].to_string())
+dfl_combined.describe()['pct_booked_30']     # Average occupancy rate of 44%
 
-# Impute means for null values
-fill_mean = lambda col: col.fillna(col.mean())  # Create mean function
-fill_dfl_cont_int = dfl_cont_int.apply(fill_mean, axis=0)  # Use function to Fill missing values with the mean of the column.
+# Create new response variable with Binary Success (0 or 1)
+dfl_combined['pct_booked_30_bnry'] = dfl_combined['pct_booked_30'].round()     # Add response variable (BINARY)
+dfl_final = dfl_combined.drop(columns=['availability_30', 'availability_60', 'availability_90', 'availability_365', 'pct_booked_30'])    # Drop redundant features because they will cause over fitting
 
-####################
-dfl_cont_int.price.describe()
-fill_dfl_cont_int.price.describe()
+
 
 # Split data in train/test (occupancy rate)
-y = fill_dfl_cont_int['pct_booked_30']
-x = fill_dfl_cont_int.drop('pct_booked_30', axis=1)
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=.3, random_state=42)    # random_state (keep value the same to recreate results)
-# Split data in train/test (PRICE)
-y = fill_dfl_cont_int['price']
-x = fill_dfl_cont_int.drop('price', axis=1)
+# y = dfl_final['pct_booked_30']
+# x = dfl_final.drop('pct_booked_30', axis=1)
+# x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=.3, random_state=42)    # random_state (keep value the same to recreate results)
+# Split data in train/test (BINARY occupancy rate)
+y = dfl_final['pct_booked_30_bnry']
+x = dfl_final.drop('pct_booked_30_bnry', axis=1)
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=.3, random_state=42)    # random_state (keep value the same to recreate results)
 
+
 # 1 - INSTANTIATE THE MODEL
-lm_model = LinearRegression(normalize=True)
+# lm_model = LinearRegression()
+lm_model = LogisticRegression()
 # 2 - FIT THE MODEL TO THE TRAINING DATA SET
 lm_model.fit(x_train, y_train)
 # 3 - PREDICT TEST DATA FROM THE MODEL
 y_test_preds = lm_model.predict(x_test)
 # 4 - SCORE THE MODEL (BASED ON THE Y_TEST DATASET)
+#log_score = logisticRegr.score(x_test, y_test)
 r2_test = r2_score(y_test, y_test_preds)    # Rsquared metric on TEST data
-"The r-squared score (TEST fit) for your model was {} on {} values.".format(r2_test, len(y_test))
+print("The r-squared score (TEST fit) for your model was {} on {} values.".format(r2_test, len(y_test)))
+
 # How good is fit to the Train data?
 y_TRAIN_preds = lm_model.predict(x_train)
 r2_TRAIN = r2_score(y_train, y_TRAIN_preds)
 "The r-squared score (TRAIN fit) for your model was {} on {} values.".format(r2_TRAIN, len(y_train))
 
-# Plot predictions to actual test predictions
+# Plot predictions to actual test values
 scatter = sns.scatterplot(y_test,y_test_preds)
 scatter.set(ylabel= 'Predicted Values')
 
