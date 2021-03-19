@@ -9,7 +9,9 @@ import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import r2_score, mean_squared_error
+from sklearn.metrics import r2_score, mean_squared_error, roc_curve, confusion_matrix, auc
+from sklearn import linear_model
+from Binary_Classifier import evalBinaryClassifier
 
 pd.set_option('display.width', 800)
 pd.set_option('display.max_columns', 30)
@@ -95,7 +97,7 @@ x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=.3,
 
 # 1 - INSTANTIATE THE MODEL
 # model = LinearRegression()
-model = LogisticRegression(max_iter= 400)
+model = LogisticRegression(max_iter= 50000)
 # 2 - FIT THE MODEL TO THE TRAINING DATA SET
 model.fit(x_train, y_train)
 # 3 - PREDICT TEST DATA FROM THE MODEL
@@ -110,7 +112,7 @@ y_TRAIN_preds = model.predict(x_train)
 r2_TRAIN = r2_score(y_train, y_TRAIN_preds)
 "The r-squared score (TRAIN fit) for your model was {} on {} values.".format(r2_TRAIN, len(y_train))
 
-######################## Plot predictions to actual test values
+######################## Plot predictions to actual test values (Continuous variable)
 scatter = sns.scatterplot(y_test, y_test_preds)
 scatter.set(ylabel='Predicted Values')
 plt.show()
@@ -118,19 +120,22 @@ plt.show()
 # Evaluate coefficients
 coefs_df = pd.DataFrame()
 coefs_df['est_int'] = x_train.columns
-coefs_df['coefs'] = model.coef_
-coefs_df['abs_coefs'] = np.abs(model.coef_)
+coefs_df['coefs'] = np.transpose(model.coef_.tolist()[0])   # transpose needed for Logistic Regression only
+coefs_df['abs_coefs'] = coefs_df['coefs'].abs()
 coefs_df = coefs_df.sort_values('abs_coefs', ascending=False)
 print(coefs_df.head(70).to_string())
 # coefs_df.loc[(coefs_df['est_int'] == 'host_listings_count')]    # -0.000617
 
+# Show descriptive statistics indicating why Cascade Neighborhood is the best predictor of 100% occupancy rates.
+dfl['neighbourhood_group_cleansed'].value_counts()
+dfl['pct_booked_30'] = (1 - dfl['availability_30'] / 30)
+dfl.groupby(['neighbourhood_group_cleansed']).describe()['pct_booked_30']
 
-# TODO Category Columns
-dfl_cat = dfl.select_dtypes(include='object')  # Get Category columns
-dfl_cat_int = dfl_cat[['host_response_time', 'host_is_superhost', 'host_identity_verified']]
-dfl_cat.dtypes
-dfl_cat.isnull().mean()
-dfl_cat_int.value_counts('host_response_time')
 
-# todo Create Linear Model to predict occupancy rate (next 30 days)
+######################## Evaluate Logistic Regression - Classifier Model
+F1 = evalBinaryClassifier(model, x_test, y_test)
+y_test.value_counts()/y_test.shape[0]   # percent of neg and pos
+
+
+
 # todo Find github ReadMe to plagurize
