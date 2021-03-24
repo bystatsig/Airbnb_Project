@@ -27,6 +27,9 @@ dfl['cleaning_fee'] = dfl['cleaning_fee'].str.replace('$', '').str.replace(',', 
 dfl['host_response_rate'] = dfl['host_response_rate'].str.replace('%', '').astype('float64')
 # print(dfl.dtypes.to_string())
 
+print(dfl.dtypes.to_string())
+dfl.shape
+
 # Get continuous variables. Reduce to those of interest (for example: remove id as they don't provide useful information)
 dfl_cont = dfl.select_dtypes(include=['float64', 'int64'])  # Get dataframe of only Continuous Columns
 dfl_cont_int = dfl_cont.drop(columns=['id', 'scrape_id', 'host_id', 'square_feet', 'license', 'monthly_price', 'weekly_price', 'host_total_listings_count'])  # Drop square_feet and monthly_price due to lack of data
