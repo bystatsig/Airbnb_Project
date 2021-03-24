@@ -27,9 +27,6 @@ dfl['cleaning_fee'] = dfl['cleaning_fee'].str.replace('$', '').str.replace(',', 
 dfl['host_response_rate'] = dfl['host_response_rate'].str.replace('%', '').astype('float64')
 # print(dfl.dtypes.to_string())
 
-print(dfl.dtypes.to_string())
-dfl.shape
-
 # Get continuous variables. Reduce to those of interest (for example: remove id as they don't provide useful information)
 dfl_cont = dfl.select_dtypes(include=['float64', 'int64'])  # Get dataframe of only Continuous Columns
 dfl_cont_int = dfl_cont.drop(columns=['id', 'scrape_id', 'host_id', 'square_feet', 'license', 'monthly_price', 'weekly_price', 'host_total_listings_count'])  # Drop square_feet and monthly_price due to lack of data
@@ -62,8 +59,8 @@ dfl_combined = pd.merge(dfl_cont_imp, dummy, left_index=True, right_index=True)
 dfl_combined['pct_booked_30'] = (1 - dfl['availability_30'] / 30)  # Add response variable (continuous)
 
 # ###################### Plot histogram of dummy Response Variable
+# histo = sns.displot(dfl_combined['pct_booked_30'], bins=30)
 # plt.suptitle('Distribution of Listings Occupancy Rates', fontsize=16)
-# histo = sns.histplot(dfl_combined['pct_booked_30'], bins=30)
 # histo.set(ylabel='Count of Listings', xlabel='Occupancy Rate in Next 30 Days')
 # plt.show()
 # ###################### Print boxplot
@@ -106,19 +103,20 @@ model.fit(x_train, y_train)
 # 3 - PREDICT TEST DATA FROM THE MODEL
 y_test_preds = model.predict(x_test)
 # 4 - SCORE THE MODEL (BASED ON THE Y_TEST DATASET)
-# log_score = logisticRegr.score(x_test, y_test)
-r2_test = r2_score(y_test, y_test_preds)  # Rsquared metric on TEST data
-print("The r-squared score (TEST fit) for your model was {} on {} values.".format(r2_test, len(y_test)))    # 0.06522038
+log_score = model.score(x_test, y_test)
+print("The mean accuracy score (TEST fit) for your model was {} on {} values.".format(log_score, len(y_test)))
+# r2_test = r2_score(y_test, y_test_preds)  # Rsquared metric on TEST data
+# print("The r-squared score (TEST fit) for your model was {} on {} values.".format(r2_test, len(y_test)))    # 0.06522038
 
 # How good is fit to the Train data?
 y_TRAIN_preds = model.predict(x_train)
 r2_TRAIN = r2_score(y_train, y_TRAIN_preds)
 "The r-squared score (TRAIN fit) for your model was {} on {} values.".format(r2_TRAIN, len(y_train))
 
-######################## Plot predictions to actual test values (Continuous variable)
-scatter = sns.scatterplot(y_test, y_test_preds)
-scatter.set(ylabel='Predicted Values')
-plt.show()
+# ######################## Plot predictions to actual test values (Continuous variable)
+# scatter = sns.scatterplot(y_test, y_test_preds)
+# scatter.set(ylabel='Predicted Values')
+# plt.show()
 
 # Evaluate coefficients
 coefs_df = pd.DataFrame()
@@ -132,7 +130,7 @@ print(coefs_df.head(70).to_string())
 # Show descriptive statistics indicating why Cascade Neighborhood is the best predictor of 100% occupancy rates.
 dfl['neighbourhood_group_cleansed'].value_counts()
 dfl['pct_booked_30'] = (1 - dfl['availability_30'] / 30)
-dfl.groupby(['neighbourhood_group_cleansed']).describe()['pct_booked_30']
+dfl.groupby(['neighbourhood_group_cleansed']).describe()['pct_booked_30'].head(10)
 
 
 ######################## Evaluate Logistic Regression - Classifier Model
