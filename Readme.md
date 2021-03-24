@@ -1,27 +1,14 @@
 
 # Read Me
-A curated list of resources for learning and using 
-[PyCharm](https://www.jetbrains.com/pycharm), 
-an IDE for Python.
+The vacation rental industry has fierce competition. This post will use dataset of nearly 4,000 listings in the Seattle area to predict successful listings.
 
-Inspired by [awesome-python](https://github.com/vinta/awesome-python).
+Questions of interest are as follows. Do Airbnb renters give bad reviews to listings that demand high fees? Do Airbnb renters rent cheaper units more than expensive units? And finally, how can Airbnb owners keep their listings occupied?
 
-## Test, smaller 
+See [Medium Post](https://bystrand.medium.com/how-to-ensure-your-airbnb-rental-gets-rented-4dd9b96bee99).
+
 - - -
-test in between line 
-- - -
-####Test 2, even smaller
+#### Reference Dataset
 
-'''
-Some code
-'''
-
-* [Configure PyCharm for Python/Django and Introduction to Django Rest Framework](https://medium.com/@srijan.pydev_21998/configure-pycharm-for-python-django-and-introduction-to-django-rest-framework-f9c1a7cb4ba0) 
-is a walkthrough to get the most out of PyCharm Professional 
-while working with Django. 
-*(2018/04/07, Srijan Anand)*
--
-sadfsad
-
-* star
+* [Kaggle](https://www.kaggle.com/airbnb/seattle)  -- 
+Listings, including full descriptions and average review score
    
