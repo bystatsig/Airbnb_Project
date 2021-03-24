@@ -1,6 +1,6 @@
 
 # Read Me
-####See [Medium Post](https://bystrand.medium.com/how-to-ensure-your-airbnb-rental-gets-rented-4dd9b96bee99).
+###See my [Medium Post](https://bystrand.medium.com/how-to-ensure-your-airbnb-rental-gets-rented-4dd9b96bee99).
 
 The vacation rental industry has fierce competition. This post will use dataset of nearly 4,000 listings in the Seattle area to predict successful listings.
 
