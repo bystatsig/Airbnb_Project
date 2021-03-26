@@ -17,6 +17,7 @@ pd.set_option('display.width', 800)
 pd.set_option('display.max_columns', 30)
 
 dfl = pd.read_csv('./data_files/listings.csv')
+dfl.shape
 
 # Convert currency & rate variables to float
 dfl['price'] = dfl['price'].str.replace('$', '').str.replace(',', '').astype('float64')
@@ -137,6 +138,3 @@ dfl.groupby(['neighbourhood_group_cleansed']).describe()['pct_booked_30'].head(1
 F1 = evalBinaryClassifier(model, x_test, y_test)
 y_test.value_counts()/y_test.shape[0]   # percent of neg and pos
 
-
-
-# todo Find github ReadMe to plagurize
